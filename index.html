@@ -19,7 +19,7 @@
   </div>
 
   <div class="container" ng-hide="details">
-    <div ng-repeat="contact in contacts | orderBy:sortField | filter:searchText">
+    <div ng-repeat="contact in people | orderBy:sortField | filter:searchText">
       <div class="col-sm-6 col-md-4 col-lg-3">
         <div class="panel panel-default" ng-click="edit(contact.id)">
           <div class="panel-heading">{{ contact.name }}</div>

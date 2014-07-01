@@ -1,6 +1,8 @@
-var myModule = angular.module('app', []);
+var app = angular.module('demoApp', ['DataModule', 'AzureDataModule', 'ui.bootstrap']);
 
-myModule.service('ContactService', function() {
+/*myModule.service('ContactService', function() {
+  
+
   //to create unique contact id
   var uid = 2;
 
@@ -14,8 +16,11 @@ myModule.service('ContactService', function() {
   this.save = function(contact) {
     if (contact.id === null) {
       //if this is new contact, add it in contacts array
-      contact.id = uid++;
-      contacts.push(contact);
+      dataService.add('people', contact, function() {
+        $scope.sync();
+      }, function() {
+        $scope.errorMessage = "Error while creating person...";
+      });
     } else {
       //for existing contact, find this contact using id
       //and update it.
@@ -28,8 +33,11 @@ myModule.service('ContactService', function() {
   };
 
   this.new = function(contact) {
-    contact.id = uid++;
-    contacts.push(contact);
+    dataService.add('people', contact, function() {
+        $scope.sync();
+      }, function() {
+        $scope.errorMessage = "Error while creating person...";
+      });
   };
 
   //simply search contacts list for given id
@@ -51,53 +59,55 @@ myModule.service('ContactService', function() {
       }
     }
   };
+});*/
 
-  //simply returns the contacts list
-  this.list = function() {
-    return contacts;
-  };
-});
+app.controller('ContactController', ['$scope', 'dataService', 'azureDataService',
+  function($scope, dataService, azureDataService) {
+    azureDataService.addSource('https://angularpeople.azure-mobile.net/', 'DDJpBYxoQEUznagCnyYNRYfkDxpYyz90', ['people']);
+    dataService.addSource(azureDataService);
+    dataService.connect(function(results) {
+      for (var result in results) {
+        $scope.$apply($scope[result] = results[result]);
+      }
+    });
 
-myModule.controller('ContactController', function($scope, ContactService) {
+    $scope.saveContact = function() {
+      ContactService.save($scope.newcontact);
+      $scope.newContact.id = null;
+      $scope.details = null;
+    };
 
-  $scope.contacts = ContactService.list();
+    $scope.newContact = function() {
+      ContactService.new($scope.newcontact);
+      $scope.newContact.id = null;
+      $scope.details = null;
+    };
 
-  $scope.saveContact = function() {
-    ContactService.save($scope.newcontact);
-    $scope.newContact.id = null;
-    $scope.details = null;
-  };
+    $scope.deleteContact = function() {
+      ContactService.delete($scope.newcontact.id);
+      $scope.newContact.id = null;
+      $scope.details = null;
+    };
+    
+    $scope.addContact = function() {
+      $scope.details = true;
+      $scope.newContact.id = null;
+    }
+    
+    $scope.cancelContact = function () {
+      $scope.details = null;
+      $scope.newContact = {};
+    }
 
-  $scope.newContact = function() {
-    ContactService.new($scope.newcontact);
-    $scope.newContact.id = null;
-    $scope.details = null;
-  };
+    $scope.delete = function(id) {
+      ContactService.delete(id);
+      if ($scope.newContact.id == id) $scope.newcontact = {};
+      $scope.details = null;
+    };
 
-  $scope.deleteContact = function() {
-    ContactService.delete($scope.newcontact.id);
-    $scope.newContact.id = null;
-    $scope.details = null;
-  };
-  
-  $scope.addContact = function() {
-    $scope.details = true;
-    $scope.newContact.id = null;
-  }
-  
-  $scope.cancelContact = function () {
-    $scope.details = null;
-    $scope.newContact = {};
-  }
-
-  $scope.delete = function(id) {
-    ContactService.delete(id);
-    if ($scope.newContact.id == id) $scope.newcontact = {};
-    $scope.details = null;
-  };
-
-  $scope.edit = function(id) {
-    $scope.details = true;
-    $scope.newContact = angular.copy(ContactService.get(id));
-  };
-})
+    $scope.edit = function(id) {
+      $scope.details = true;
+      $scope.newContact = angular.copy(ContactService.get(id));
+    };
+  }] 
+);
